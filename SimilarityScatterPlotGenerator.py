@@ -3,69 +3,70 @@ import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.decomposition import PCA
-import PyPDF2
+import pandas as pd
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from dataframeClass import DataFrameReview
+import mplcursors
 
 class SimilarityScatterPlotGen:
-    def __init__(self, documents):
-        self.setDocuments(documents)
+
+    def __init__(self, dataSet,contentColumnName,langColumnName,pkColumn):
+        self.names = [] 
+        self.comments = []
+        self.setDocuments(dataSet,contentColumnName,langColumnName,pkColumn)
         
-    def setDocuments(self, documents):
-        def is_pdf(docname):
-            if isinstance(docname, str):
-                return docname.lower().endswith('.pdf')
+    def setDocuments(self, dataSet,contentColumnName,langColumnName,pkColumn):
+
+        def is_dfPandas(dataFrame):
+            if isinstance(dataFrame, pd.DataFrame):
+                return True
             else:
-                raise ValueError('Document name must be a string')
+                raise ValueError('Um dataframe pandas deve ser fornecido.')
+            
+        def iterar():
+            if(is_dfPandas(dataSet)):
+                for index,linha in dataSet.iterrows():
+                    try:
+                        comentario=linha[contentColumnName]
+                        lang=linha[langColumnName]
+                        name=linha[pkColumn]
+                        stopwords=nltk.corpus.stopwords.words(lang)
+                        comentarioTokens=nltk.word_tokenize(comentario)
+                        filtredContentTokens=[token for token in comentarioTokens if token not in stopwords]
+                        currentText=" ".join(filtredContentTokens)
+                        self.names.append(name)
+                        self.comments.append(currentText)
+                    except:
+                        continue
+        iterar()
         
-        def read_pdf(document):
-            text = []
-            with open(document,'rb') as pdf:
-                leitor=PyPDF2.PdfReader(pdf)
-                numPaginas=len(leitor.pages)
-                for i in range(numPaginas):
-                    paginaAtual=leitor.pages[i]
-                    text.append(paginaAtual.extract_text() or '')  # Adicionado 'or ""' para evitar None
-                pdf.close()
-            return '\n'.join(text)
-        
-        if isinstance(documents, tuple) and len(documents) > 1:
-            self.documents = []
-            self.doc_names = []
-            for doc in documents:
-                if is_pdf(doc):
-                    doc_name = doc.split('/')[-1].split('.')[0]
-                    self.doc_names.append(doc_name)
-                    doc_content = read_pdf(doc)
-                    self.documents.append(doc_content)
-                else:
-                    raise ValueError(f"{doc} não é um arquivo PDF.")
-        else:
-            raise ValueError("Uma tupla com pelos menos dois documentos deve ser fornecida.")
+
+    def getNames(self):
+        return self.names
     
-    def getDocNames(self):
-        return self.doc_names
-    
-    def getDocs(self):
-        return self.documents
+    def getComments(self):
+        return self.comments
     
     def generate_similarity_scatter_plot(self):
         vectorizer = TfidfVectorizer(
-            stop_words='english',
             max_df=1.0,               
             min_df=1,                 
             max_features=500         
         )
-        documents = self.getDocs()
-        document_names = self.getDocNames()
-        tfidf_matrix = vectorizer.fit_transform(documents)
+        comments = self.getComments()
+        names = self.getNames()
+        colors=plt.cm.tab10(np.linspace(0, 1, len(set(names))))
+        tfidf_matrix = vectorizer.fit_transform(comments)
         cosine_sim_matrix = cosine_similarity(tfidf_matrix)
         pca = PCA(n_components=2)
         pca_result = pca.fit_transform(cosine_sim_matrix)
 
         plt.figure(figsize=(8, 6))
-        plt.scatter(pca_result[:, 0], pca_result[:, 1])
+        scatter=plt.scatter(pca_result[:, 0], pca_result[:, 1])
 
-        for i, doc in enumerate(document_names):
-            plt.annotate(doc, (pca_result[i, 0], pca_result[i, 1]))
+        mplcursors.cursor(scatter, hover=True).connect("add", lambda sel: sel.annotation.set_text(names[sel.target.index]))
 
         plt.title("Gráfico de Dispersão de Similaridade de Textos")
         plt.xlabel("Componente Principal 1")
@@ -74,9 +75,10 @@ class SimilarityScatterPlotGen:
 
 
 if __name__ == "__main__":
-    path1='./1.pdf'
-    path2='./2.pdf'
-    path3='./3.pdf'
-    documents = (path1, path2, path3)
-    scatter_plot_gen = SimilarityScatterPlotGen(documents)
+    csv_file = './chatgpt_reviews.csv'
+    myDataframe = DataFrameReview(csv_file)
+    periodo = ('2024-05-20','2024-05-26')
+    dataFrame=myDataframe.getDataFrame(coluna=['userName','content','lang'],periodo=periodo,lang=True)
+
+    scatter_plot_gen = SimilarityScatterPlotGen(dataFrame,'content','lang','userName')
     scatter_plot_gen.generate_similarity_scatter_plot()
