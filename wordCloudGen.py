@@ -4,6 +4,7 @@ from wordcloud import WordCloud
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+import string
 
 from dataframeClass import DataFrameReview
 
@@ -32,6 +33,7 @@ class WordCloudGenerator:
             
         def iterar(mainData,contentColumnName,langColumnName):
             if(isinstance(mainData,pd.DataFrame)):
+                caracteres_especiais=list("!@#$%^&*()_-+={}[]:;'<>?,./|\\~`")
                 myBigText=''
                 for index,linha in mainData.iterrows():
                     comentario=linha[contentColumnName]
@@ -39,7 +41,7 @@ class WordCloudGenerator:
                     try:
                         stopwords=nltk.corpus.stopwords.words(lang)
                         contentTokens=nltk.word_tokenize(comentario)
-                        filtredContentTokens=[token for token in contentTokens if token not in stopwords]
+                        filtredContentTokens=[token for token in contentTokens if token not in stopwords and token not in string.ascii_letters and token not in string.digits and token not in caracteres_especiais]
                         currentText=" ".join(filtredContentTokens)
                         myBigText+=f' {currentText}'
                     except:

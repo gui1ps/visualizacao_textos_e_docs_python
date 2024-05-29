@@ -5,6 +5,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.decomposition import PCA
 import pandas as pd
 import nltk
+import string
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from dataframeClass import DataFrameReview
@@ -27,6 +28,7 @@ class SimilarityScatterPlotGen:
             
         def iterar():
             if(is_dfPandas(dataSet)):
+                caracteres_especiais=list("!@#$%^&*()_-+={}[]:;'<>?,./|\\~`")
                 for index,linha in dataSet.iterrows():
                     try:
                         comentario=linha[contentColumnName]
@@ -34,7 +36,7 @@ class SimilarityScatterPlotGen:
                         name=linha[pkColumn]
                         stopwords=nltk.corpus.stopwords.words(lang)
                         comentarioTokens=nltk.word_tokenize(comentario)
-                        filtredContentTokens=[token for token in comentarioTokens if token not in stopwords]
+                        filtredContentTokens=[token for token in comentarioTokens if token not in stopwords and token not in string.ascii_letters and token not in string.digits and token not in caracteres_especiais]
                         currentText=" ".join(filtredContentTokens)
                         self.names.append(name)
                         self.comments.append(currentText)
