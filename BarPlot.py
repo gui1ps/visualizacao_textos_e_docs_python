@@ -32,7 +32,7 @@ class BarPlotGen:
                     text=page.extract_text()
                     tokenized_text=nltk.word_tokenize(text)
                     stopwords=nltk.corpus.stopwords.words(lang)
-                    filtredContentTokens=[token for token in tokenized_text if token not in stopwords and token not in string.ascii_letters and token not in string.digits and token not in caracteres_especiais]
+                    filtredContentTokens = [token for token in tokenized_text if token not in stopwords and not token.isdigit() and token not in string.ascii_letters and token not in caracteres_especiais]
                     self.words.extend(filtredContentTokens)
                 except Exception as error:
                     print(error)    
