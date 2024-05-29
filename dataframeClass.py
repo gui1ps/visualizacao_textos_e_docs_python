@@ -116,26 +116,12 @@ class DataFrameReview:
                 if(lang):
                     dataFrameFiltrado['lang']=dataFrameFiltrado['content'].apply(detectarIdioma)
                 return dataFrameFiltrado[coluna]
-            
-            ''' def verificarDatas(periodo):
-            maiorData=np.datetime64(pd.DataFrame(self._dataFrame['at']).max()[0])
-            menorData=np.datetime64(pd.DataFrame(self._dataFrame['at']).min()[0])
-            print(maiorData)
-           # print(maiorData)
-            periodo = [np.datetime64(periodo[0]), np.datetime64(periodo[1])]
-            if(isinstance(periodo,tuple)):
-                if(periodo[0]>=menorData and periodo[1]<=maiorData):
-                    return True
-                else:
-                    raise ValueError("O período desejado é inválido para este dataset")'''
     
 if __name__ == "__main__":
     csv_file = './chatgpt_reviews.csv'
     df_review = DataFrameReview(csv_file)
     
     periodo = ('2024-05-20','2024-05-21')
-    
-    #testes com variações do uso do método getDataFrame()
     
     df_filtrado = df_review.getDataFrame().head(1)
     print(df_filtrado)
